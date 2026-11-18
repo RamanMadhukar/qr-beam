@@ -1,0 +1,35 @@
+{
+  "name": "qr-beam",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080 --directory www",
+    "phone": "python3 tools/serve-https.py",
+    "test": "node --test tests/*.test.js",
+    "vendor": "node tools/vendor.js",
+    "postinstall": "node tools/vendor.js",
+    "icons": "node tools/make-icons.js",
+    "sync": "cap sync",
+    "ios": "cap sync ios && cap open ios",
+    "android": "cap sync android && cap open android",
+    "apk": "sh tools/build-apk.sh"
+  },
+  "dependencies": {
+    "@capacitor-community/keep-awake": "8.0.1",
+    "@capacitor/android": "8.5.3",
+    "@capacitor/clipboard": "8.0.1",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/filesystem": "8.1.4",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/share": "8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "@fontsource/bricolage-grotesque": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "jsqr": "1.4.0",
+    "qrcode-generator": "1.4.4",
+    "zxing-wasm": "3.1.5"
+  }
+}

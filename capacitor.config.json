@@ -1,0 +1,13 @@
+{
+  "appId": "com.qrbeam.app",
+  "appName": "QR Beam",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css"
+    }
+  }
+}

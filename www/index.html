@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>QR Beam</title>
+  <meta name="description" content="Move files and text between devices by scanning a loop of QR codes. No network, no accounts.">
+  <meta name="theme-color" content="#0b6e69" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1615" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="#send" aria-label="QR Beam home">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M2 2h8v8H2zM4 4v4h4V4zM14 2h8v8h-8zm2 2v4h4V4zM2 14h8v8H2zm2 2v4h4v-4z" fill-rule="evenodd"/>
+          <path d="M5 5h2v2H5zM17 5h2v2h-2zM5 17h2v2H5zM13 17h5v-2l4 3-4 3v-2h-5z"/>
+        </svg>
+        <span>QR Beam</span>
+      </a>
+      <span id="offline-badge" class="badge" hidden>Works offline</span>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- SEND -->
+    <section id="view-send" class="view" aria-labelledby="send-title">
+      <div id="send-compose" class="stack">
+        <div class="intro">
+          <h1 id="send-title">Send</h1>
+          <p class="lede">Add files or write a note. This screen then plays a loop of QR codes. Open <strong>Receive</strong> on the other device and point its camera here.</p>
+        </div>
+
+        <div id="dropzone" class="dropzone">
+          <input type="file" id="file-input" multiple hidden>
+          <button type="button" id="add-files" class="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+            Add files
+          </button>
+          <span class="hint">or drop them here</span>
+        </div>
+
+        <ul id="send-items" class="file-list" aria-label="Files to send"></ul>
+
+        <div class="field">
+          <label for="note">Note</label>
+          <textarea id="note" rows="3" placeholder="A link, an address, a Wi-Fi password…"></textarea>
+        </div>
+
+        <fieldset class="settings">
+          <legend>Transfer settings</legend>
+          <div class="field">
+            <span class="label" id="mode-label">Mode</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="mode-label">
+              <input type="radio" name="mode" id="mode-easy" value="easy">
+              <label for="mode-easy">Easy scan<small>1×300 B</small></label>
+              <input type="radio" name="mode" id="mode-balanced" value="balanced">
+              <label for="mode-balanced">Balanced<small>1×700 B</small></label>
+              <input type="radio" name="mode" id="mode-fast" value="fast">
+              <label for="mode-fast">Fast<small>2×700 B</small></label>
+              <input type="radio" name="mode" id="mode-max" value="max">
+              <label for="mode-max">Max<small>2×1100 B</small></label>
+            </div>
+            <p class="hint">Fast and Max show two codes at once. Hold the phones close and steady.</p>
+          </div>
+          <div class="field">
+            <label for="fps">Speed <output id="fps-out" for="fps"></output></label>
+            <input type="range" id="fps" min="2" max="20" step="1" value="10">
+          </div>
+        </fieldset>
+
+        <div id="send-summary" class="summary" aria-live="polite">
+          <dl>
+            <div><dt>Size</dt><dd id="sum-size">—</dd></div>
+            <div><dt>Codes per loop</dt><dd id="sum-frames">—</dd></div>
+            <div><dt>Time</dt><dd id="sum-time">—</dd></div>
+          </dl>
+          <p id="sum-warning" class="warning" hidden></p>
+        </div>
+
+        <button type="button" id="start-send" class="button primary wide" disabled>Start sending</button>
+      </div>
+
+      <div id="send-live" class="broadcast" hidden>
+        <div id="qr-stage" class="qr-stage"></div>
+        <div class="broadcast-bar">
+          <p class="readout mono" id="send-readout"></p>
+          <div class="broadcast-controls">
+            <label for="fps-live" class="visually-hidden">Speed</label>
+            <input type="range" id="fps-live" min="2" max="20" step="1" value="10">
+            <output id="fps-live-out" for="fps-live" class="mono"></output>
+            <button type="button" id="pause-send" class="button small">Pause</button>
+            <button type="button" id="stop-send" class="button small">Stop</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECEIVE -->
+    <section id="view-receive" class="view" aria-labelledby="recv-title" hidden>
+      <div id="recv-idle" class="stack">
+        <div class="intro">
+          <h1 id="recv-title">Receive</h1>
+          <p class="lede">Start the camera and point it at the QR codes playing on the other device. You can join at any point in the loop. Missed codes get filled in automatically.</p>
+        </div>
+        <button type="button" id="start-recv" class="button primary wide">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l1.5 2H20a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3.5zm3 4a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+          Start camera
+        </button>
+        <p id="recv-error" class="error" role="alert" hidden></p>
+      </div>
+
+      <div id="recv-live" class="stack live" hidden>
+        <div class="viewfinder">
+          <video id="video" playsinline muted autoplay></video>
+          <div class="reticle" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <p id="recv-toast" class="toast" hidden></p>
+        </div>
+        <div class="progress-panel">
+          <div class="progress-head">
+            <strong id="recv-status">Looking for a QR Beam code…</strong>
+            <span id="recv-percent" class="mono">0%</span>
+          </div>
+          <canvas id="block-map" aria-hidden="true"></canvas>
+          <p class="readout mono" id="recv-readout">&nbsp;</p>
+        </div>
+        <button type="button" id="stop-recv" class="button wide">Stop camera</button>
+      </div>
+
+      <div id="recv-done" class="stack" hidden>
+        <div class="intro">
+          <p class="eyebrow ok">Received</p>
+          <h1 id="done-title">Saved to Inbox</h1>
+          <p class="lede" id="done-detail"></p>
+        </div>
+        <div id="done-transfer"></div>
+        <p id="done-error" class="error" role="alert" hidden></p>
+        <div class="row">
+          <button type="button" id="recv-again" class="button primary">Receive another</button>
+          <a href="#inbox" class="button">Open Inbox</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- INBOX -->
+    <section id="view-inbox" class="view" aria-labelledby="inbox-title" hidden>
+      <div class="stack">
+        <div class="intro">
+          <h1 id="inbox-title">Inbox</h1>
+          <p class="lede">Everything you receive stays on this device until you delete it.</p>
+        </div>
+        <ol id="inbox-list" class="transfers"></ol>
+        <div id="inbox-empty" class="empty" hidden>
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 6h14v14H6zm4 4v6h6v-6zM28 6h14v14H28zm4 4v6h6v-6zM6 28h14v14H6zm4 4v6h6v-6zM28 28h4v4h-4zm8 0h6v4h-6zm-8 8h4v6h-4zm8 2h6v4h-6z" fill-rule="evenodd"/></svg>
+          <p><strong>Nothing received yet.</strong> Open Receive on this device and scan the codes playing on another device.</p>
+          <a href="#receive" class="button">Go to Receive</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Sections">
+    <div class="tabbar-inner">
+      <a href="#send" class="tab" data-view="send">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3zm2 2v4h4V5zM13 13h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3zM3 13h8v8H3zm2 2v4h4v-4zM13 3h8v8h-8zm2 2v4h4V5z" fill-rule="evenodd"/></svg>
+        <span>Send</span>
+      </a>
+      <a href="#receive" class="tab" data-view="receive">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h6v2H5v4H3zm12 0h6v6h-2V5h-4zM3 15h2v4h4v2H3zm16 0h2v6h-6v-2h4zM7 11h10v2H7z"/></svg>
+        <span>Receive</span>
+      </a>
+      <a href="#inbox" class="tab" data-view="inbox">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16l1 1v14l-1 1H4l-1-1V5zm1 2v7h4l1 2h4l1-2h4V6zm0 9v3h14v-3h-2.8l-1 2H8.8l-1-2z" fill-rule="evenodd"/></svg>
+        <span>Inbox</span>
+        <b id="inbox-count" class="count" hidden></b>
+      </a>
+    </div>
+  </nav>
+
+  <script src="vendor/capacitor.js"></script>
+  <script src="vendor/qrcode.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
